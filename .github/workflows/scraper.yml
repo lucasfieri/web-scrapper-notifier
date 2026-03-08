@@ -1,0 +1,55 @@
+name: Web Scraper Notifier
+
+on:
+  schedule:
+    # UTC times — 9 AM, 3 PM and 9 PM BRT (UTC-3) = 12:00, 18:00, 00:00 UTC
+    - cron: "0 12 * * *"
+    - cron: "0 18 * * *"
+    - cron: "0 0 * * *"
+  workflow_dispatch: # allow manual runs
+
+permissions:
+  contents: write # needed to commit the updated snapshot
+
+jobs:
+  scrape:
+    name: Scrape and Notify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run scraper
+        env:
+          SCRAPE_URL: ${{ secrets.SCRAPE_URL }}
+          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+        run: uv run python scraper.py
+
+      - name: Commit updated snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add snapshot.txt
+          if git diff --cached --quiet; then
+            echo "No snapshot changes to commit."
+          else
+            git commit -m "chore: update snapshot [skip ci]"
+            git push origin main
+          fi
