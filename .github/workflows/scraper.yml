@@ -1,11 +1,6 @@
 name: Web Scraper Notifier
 
 on:
-  schedule:
-    # UTC times — 9 AM, 3 PM and 9 PM BRT (UTC-3) = 12:00, 18:00, 00:00 UTC
-    - cron: "0 12 * * *"
-    - cron: "0 18 * * *"
-    - cron: "0 0 * * *"
   workflow_dispatch: # allow manual runs
 
 permissions:
